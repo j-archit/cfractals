@@ -1,9 +1,17 @@
 import sys
+import os
 import subprocess
 from PIL import Image, ImageDraw
 
-fname = sys.argv[1]
-oname = sys.argv[2]
+sdir = os.path.dirname(__file__) #<-- absolute dir the script is in
+
+fname = os.path.join(sdir, "../output/default_c.txt")
+argv = sys.argv[1:]
+for i, arg in enumerate(argv):
+    if arg == "-f":
+        fname = os.path.join(sdir, argv[i+1])
+    if arg == "-o":
+        oname = os.path.join(sdir, argv[i+1]) 
 
 with open(fname) as f:
     dim = f.readline().split(",")

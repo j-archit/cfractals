@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <math.h>
 #include <stdint.h>
@@ -11,6 +12,7 @@ int dimension_y = 1080;
 int dimension_x = 1920;
 double oratio[2] = {0.65, 0.5};
 float y_max = 2.222;
+float inv_res = 1080/2.222;
 int MAXT = 100;
 
 // These control printing to the console
@@ -49,6 +51,15 @@ struct complex _mul (struct complex A, struct complex B){
     C.re = A.re * B.re - A.im * B.im;
     C.im = A.re * B.im + A.im * B.re;
     return C;
+}
+struct complex _pow(struct complex A, int p){
+    struct complex C = _complex(1, 0);
+    for(p; p > 0; p--)
+        C = _mul(C, A);
+    return C;
+}
+struct complex _powf (struct complex A, double p){
+
 }
 struct complex _muld (struct complex A, double B){
     struct complex C;
@@ -89,31 +100,120 @@ int check(struct complex Z){
     return 0;
 }
 
-// All generation functions work with the Complex Coordinate System(CCS) and not with the Array Coordinate System(ACS)
-void mandelbrot(int dimx, int dimy, double inv_res, struct complex S, struct complex origin, FILE* f){
+// Loops start at the bottom left in terms of their iterating variables(i, j) and at the top right via (i, dimension_y - j). 
+// This is mostly for compatibility to write out pixel file.
 
+// Generating Function for all complex recursive function defined using bound-ablity, eg Mandelbrot, Tricorn and Multi variations of these. 
+void complexRecursiveBounded(struct complex (*func)(struct complex, struct complex, double), double inv_res, struct complex S, struct complex origin, double degree, FILE* f){
+    
     struct complex Z;
-    progress(0, dimy);
+    progress(0, dimension_y);
     // Loop over ACS Coordinates and convert to CCS on the fly.
     int i, j, m;
-    for(j = dimy-1; j >= 0 ; j--){
-        for(m = 0; m < dimx; m++){
+    for(j = dimension_y-1; j >= 0 ; j--){
+        for(m = 0; m < dimension_x; m++){
             // Conversion to CCS
             struct complex C = _sub(_complex(m/inv_res, j/inv_res), origin);
             int k = 0;
             Z = S;
             while(k <= MAXT && check(Z)){
-                struct complex X = _add(_mul(Z, Z), C);
+                struct complex X = func(Z, C, degree); //_add(_mul(Z, Z), C);
                 Z.re = X.re;
                 Z.im = X.im;
                 k++;
             }
-            fprintf(f, "%d,", (uint8_t)(k > MAXT));
+            fprintf(f, "%d ", (uint8_t)(k > MAXT));
         }
-        progress(dimy - j, dimy);
+        progress(dimension_y - j, dimension_y);
         fprintf(f, " \n");
     }
 }
+
+struct complex int_multibrot(struct complex Z, struct complex C, double d){
+    return _add(_pow(Z, d), C);
+}
+struct complex double_multibrot(struct complex Z, struct complex C, double d){
+    return _add(_pow(Z, d), C);
+}
+
+struct complex int_multicorn(struct complex Z, struct complex C, double d){
+    return _add(_conj(_pow(Z, d)), C);
+}
+struct complex double_multicorn(struct complex Z, struct complex C, double d){
+    return _add(_conj(_pow(Z, d)), C);
+}
+
+// void mandelbrot(double inv_res, struct complex S, struct complex origin, FILE* f){
+//     struct complex Z;
+//     progress(0, dimension_y);
+//     // Loop over ACS Coordinates and convert to CCS on the fly.
+//     int i, j, m;
+//     for(j = dimension_y-1; j >= 0 ; j--){
+//         for(m = 0; m < dimension_x; m++){
+//             // Conversion to CCS
+//             struct complex C = _sub(_complex(m/inv_res, j/inv_res), origin);
+//             int k = 0;
+//             Z = S;
+//             while(k <= MAXT && check(Z)){
+//                 struct complex X = _add(_mul(Z, Z), C);
+//                 Z.re = X.re;
+//                 Z.im = X.im;
+//                 k++;
+//             }
+//             fprintf(f, "%d ", (uint8_t)(k > MAXT));
+//         }
+//         progress(dimension_y - j, dimension_y);
+//         fprintf(f, " \n");
+//     }
+// }
+
+// void multibrot(double inv_res, struct complex S, struct complex origin, double deg, FILE* f){
+//     struct complex Z;
+//     progress(0, dimension_y);
+//     // Loop over ACS Coordinates and convert to CCS on the fly.
+//     int i, j, m;
+//     for(j = dimension_y-1; j >= 0 ; j--){
+//         for(m = 0; m < dimension_x; m++){
+//             // Conversion to CCS
+//             struct complex C = _sub(_complex(m/inv_res, j/inv_res), origin);
+//             int k = 0;
+//             Z = S;
+//             while(k <= MAXT && check(Z)){
+//                 struct complex X = _add(_powf(Z, deg), C);
+//                 Z.re = X.re;
+//                 Z.im = X.im;
+//                 k++;
+//             }
+//             fprintf(f, "%d ", (uint8_t)(k > MAXT));
+//         }
+//         progress(dimension_y - j, dimension_y);
+//         fprintf(f, " \n");
+//     }
+// }
+
+// void multicorn(double inv_res, struct complex S, struct complex origin, double deg, FILE* f){
+//     struct complex Z;
+//     progress(0, dimension_y);
+//     // Loop over ACS Coordinates and convert to CCS on the fly.
+//     int i, j, m;
+//     for(j = dimension_y-1; j >= 0 ; j--){
+//         for(m = 0; m < dimension_x; m++){
+//             // Conversion to CCS
+//             struct complex C = _sub(_complex(m/inv_res, j/inv_res), origin);
+//             int k = 0;
+//             Z = S;
+//             while(k <= MAXT && check(Z)){
+//                 struct complex X = _add(_conj(_pow(Z, deg)), C);
+//                 Z.re = X.re;
+//                 Z.im = X.im;
+//                 k++;
+//             }
+//             fprintf(f, "%d ", (uint8_t)(k > MAXT));
+//         }
+//         progress(dimension_y - j, dimension_y);
+//         fprintf(f, " \n");
+//     }
+// }
 
 void newton(){
 
@@ -122,6 +222,7 @@ void newton(){
 void main(int argc, char *argv[])
 {
     int i;
+    float degree = 2;
     for(i = 1; i < argc; i++){
         char* option = argv[i];
         if(option[0] == '-'){
@@ -131,52 +232,59 @@ void main(int argc, char *argv[])
             sscanf (argv[i+1], "%f", &floatv) == 1;
             switch(option[1]){
                 case 'h': {
-                    dimension_y = intv; i++;
-                    break;
+                    dimension_y = intv;
+                    inv_res = dimension_y/y_max;
+                    i++; break;
                 }
                 case 'w': {
-                    dimension_x = intv; i++;
-                    break;
+                    dimension_x = intv; i++; break;
                 }
                 case 'm': {
-                    MAXT = intv; i++;
-                    break;
-                }
-                case 'y': {
-                    y_max = floatv; i++;
-                    break;
+                    MAXT = intv; i++; break;
                 }
                 case 'f': {
                     fractal = intv;
-                    if(fractal > 1){
+                    if(fractal > 3){
                         printf("--------------------------\n");
                         printf("Unknown Fractal:\n");
                         printf("Available:\n");
                         printf("   -> mandelbrot (0)\n");
-                        printf("   -> newton (1)\n");
+                        printf("   -> multibrot (1) : Requires degree argument\n");
+                        printf("   -> tricorn (2)\n");
+                        printf("   -> multicorn (3) : Requires degree argument\n");
+                        printf("   -> newton (4)\n");
                         exit(1);
                     }
-                    else
-                        fractal = 0;
-                    i++;
-                    break;
-                }
-                case 's': {
-                    print_verbose = 0;
-                    break;
-                }
-                case 'M':{
-                    dimension_x *= intv;
-                    dimension_y *= intv;
                     i++; break;
                 }
+                case 'M': {
+                    dimension_x *= intv;
+                    dimension_y *= intv;
+                    inv_res = dimension_y/y_max;
+                    i++; break;
+                }
+                case 's': {
+                    print_verbose = 0; break;
+                }
+                case '-': {
+                    if(!strcmp(option, "--ox")){
+                        oratio[0] = floatv;
+                    }
+                    if(!strcmp(option, "--oy")){
+                        oratio[1] = floatv;
+                    }
+                    if(!strcmp(option, "--ymax")){
+                        y_max = floatv;
+                        inv_res = dimension_y/y_max;
+                    }
+                    if(!strcmp(option, "--degree")){
+                        degree = floatv;
+                    }
+                }    
             }
-            if(option){}
         }
     }
-
-    const double inv_res = dimension_y/y_max;
-
+    
     if(print_verbose){
         system("setterm --cursor off");
         printf("--------------------------\n");
@@ -195,17 +303,35 @@ void main(int argc, char *argv[])
     // Common to all Fractals
     struct complex origin = _complex(dimension_x*oratio[0]/inv_res, dimension_y*oratio[1]/inv_res);
     FILE *f;
-    f = fopen("default_c.txt", "w");
+    f = fopen("output/default_c.txt", "w");
     fprintf(f, "%d,%d\n", dimension_x, dimension_y);
     
     // Switch control based on fractal input
     switch(fractal){
         case 0:{
-            mandelbrot(dimension_x, dimension_y, inv_res, _complex(0, 0), origin, f);
+            // Mandelbrot Set
+            complexRecursiveBounded(int_multibrot, inv_res, _complex(0, 0), origin, 2, f);
             break;
         }
         case 1:{
-            newton();
+            // Multibrot Set
+            if(floor(degree) == degree)
+                complexRecursiveBounded(int_multibrot, inv_res, _complex(0, 0), origin, degree, f);
+            else
+                complexRecursiveBounded(double_multibrot, inv_res, _complex(0, 0), origin, degree, f);
+            break;
+        }
+        case 2:{
+            // Tricorn Set
+            complexRecursiveBounded(int_multicorn, inv_res, _complex(0, 0), origin, 3, f);
+            break;
+        }
+        case 3:{
+            // Multicorn Set
+            if(floor(degree) == degree)
+                complexRecursiveBounded(int_multicorn, inv_res, _complex(0, 0), origin, degree, f);
+            else
+                complexRecursiveBounded(double_multicorn, inv_res, _complex(0, 0), origin, degree, f);
             break;
         }
     }

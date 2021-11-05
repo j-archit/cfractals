@@ -95,7 +95,6 @@ Here's a blank template to get started: To avoid retyping too much info. Do a se
 * gcc/g++ v9.3.0
 * [Python v3.5 or greater](https://www.python.org/)
 (All code currently written in C and is expected to port to C++)
-
 <!--
 * [Next.js](https://nextjs.org/)
 * [React.js](https://reactjs.org/)
@@ -116,7 +115,7 @@ To get a local copy up and running follow these simple example steps.
 
 ### Prerequisites
 
-This is an example of how to list things you need to use the software and how to install them.
+<!--This is an example of how to list things you need to use the software and how to install them.-->
 * gcc/g++
   <!--
   ```sh
@@ -124,7 +123,10 @@ This is an example of how to list things you need to use the software and how to
   ```
   -->
 * Python v3.5+
-
+* Python Pillow Library
+  '''sh
+    pip install pillow
+  '''
 <!--
 ### Installation
 
@@ -148,6 +150,20 @@ This is an example of how to list things you need to use the software and how to
 
 <!-- USAGE EXAMPLES -->
 ## Usage
+Once you have gcc/g++ and python installed, compile main.c by running the following command in the top directory.
+Linux:
+'''sh
+gcc -w src/main.c -o main -lm -fno-math-errno -ffinite-math-only -fno-signed-zeros -fsingle-precision-constant
+'''
+Windows:
+'''sh
+gcc -w src/main.c -o main.exe -lm -fno-math-errno -ffinite-math-only -fno-signed-zeros -fsingle-precision-constant
+'''
+Once compilation is complete, run the program from main/main.exe.
+This generates a text file in ./outputs folder. 
+Run src/gen.py
+
+An example usage script is given in runc.sh
 <!--
 Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
 
@@ -155,7 +171,6 @@ _For more examples, please refer to the [Documentation](https://example.com)_
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 -->
-WIP
 
 <!-- ROADMAP -->
 ## Roadmap

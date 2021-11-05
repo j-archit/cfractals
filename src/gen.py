@@ -30,13 +30,29 @@ with open(fname) as f:
     new_image = Image.new("L", (i_o, j_o), color=0)
     drawer = ImageDraw.Draw(new_image)
     for line in f:
-        i = 0
         sp = line.strip().split(" ")
         j = int(sp[0])
-        for p in sp[1:]:
-            i += 1
-            drawer.point((int(p), j), fill=255)
-        
+
+        pix = sp[1:]
+        # last_col = 0
+        i = 0
+        while True:
+            try:
+                start = int(pix[i])
+            except IndexError:
+                break
+            try:
+                end = int(pix[i+1])
+            except IndexError:
+                end = i_o
+            i += 2
+
+            for pixeli in range(start, end):
+                drawer.point((pixeli, j), fill=255)
+            
+            if end == i_o:
+                break
+
         # Progress reported via each row
         if not j % 25:
             sl = (sl + 1) % 4
@@ -50,6 +66,10 @@ except:
     pass
 
 print("   Saving Image:", end="")
-new_image.save(f'{oname}.png')
-print(f"\r   Done Saving:  \n   {oname}.bmp");
+
+if 'oname' not in locals():
+    oname = os.path.join(sdir, "../output/")
+
+new_image.save(f'{oname}_{i_o}*{j_o}.png')
+print(f"\r   Done Saving:  \n   {oname}_{i_o}*{j_o}.png");
 print("--------------------------");

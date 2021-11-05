@@ -12,19 +12,19 @@ int dimension_y = 1080;
 int dimension_x = 1920;
 double oratio[2] = {0.65, 0.5};
 float y_max = 2.222;
-float inv_res = 1080/2.222;
+float ppu = 1080/2.222;
 int MAXT = 100;
 
 // These control printing to the console
 int print_verbose = 1;
 char sla[5] = {'-', '/', '|', '\\', '-'};
 
+// Fractal options
 double bound = pow(2, 128);
-
 int fractal = 0;
 
 // Complex Numbers Structure
-struct complex{
+struct complex {
     double re;
     double im;
 };
@@ -52,7 +52,13 @@ struct complex _mul (struct complex A, struct complex B){
     C.im = A.re * B.im + A.im * B.re;
     return C;
 }
-struct complex _pow(struct complex A, int p){
+struct complex _muld (struct complex A, double B){
+    struct complex C;
+    C.re = A.re * B;
+    C.im = A.re * B;
+    return C;
+}
+struct complex _pow (struct complex A, int p){
     struct complex C = _complex(1, 0);
     for(p; p > 0; p--)
         C = _mul(C, A);
@@ -60,12 +66,6 @@ struct complex _pow(struct complex A, int p){
 }
 struct complex _powf (struct complex A, double p){
 
-}
-struct complex _muld (struct complex A, double B){
-    struct complex C;
-    C.re = A.re * B;
-    C.im = A.re * B;
-    return C;
 }
 struct complex _conj (struct complex A){
     struct complex C;
@@ -104,35 +104,39 @@ int check(struct complex Z){
 // This is mostly for compatibility to write out pixel file.
 
 // Generating Function for all complex recursive function defined using bound-ablity, eg Mandelbrot, Tricorn and Multi variations of these. 
-void complexRecursiveBounded(struct complex (*func)(struct complex, struct complex, double), double inv_res, struct complex S, struct complex origin, double degree, FILE* f){
+void complexRecursiveBounded(struct complex (*func)(struct complex, struct complex, double), double ppu, struct complex S, struct complex origin, double degree, FILE* f){
     
     struct complex Z;
     progress(0, dimension_y);
     // Loop over ACS Coordinates and convert to CCS on the fly.
-    int i, j, m, fl;
+    int i, j, col, fl;
+    int last_color = 0;  // Base color = 0
     long pos;
     for(j = dimension_y - 1; j >= 0 ; j--){
         fl = 0;
         pos = ftell(f);
+        last_color = 0;
+        // Print Line number
         fprintf(f, "%d ", dimension_y - j - 1);
         for(i = 0; i < dimension_x; i++){
             // Conversion to CCS
-            struct complex C = _sub(_complex(i/inv_res, j/inv_res), origin);
+            struct complex C = _sub(_complex(i/ppu, j/ppu), origin);
             int k = 0;
             Z = S;
             while(k <= MAXT && check(Z)){
-                struct complex X = func(Z, C, degree);
-                Z.re = X.re;
-                Z.im = X.im;
+                Z = func(Z, C, degree);
                 k++;
             }
-            m = (uint8_t)(k > MAXT);
-            if(m){
-                fprintf(f, "%d ", i);    
+            col = (uint8_t)(k > MAXT);
+            if(last_color ^ col){
+            // if(col){
+                fprintf(f, "%d ", i);
                 fl = 1;
             }
+            last_color = col;
         }
-        !fl ? fseek(f, pos, SEEK_SET): fprintf(f, " \n");
+        // Go back to start of line if no color changes (other than base) on the line, otherwise add newline
+        !fl? fseek(f, pos, SEEK_SET): fprintf(f, " \n");
         progress(dimension_y - j, dimension_y);
     }
 }
@@ -155,7 +159,7 @@ void newton(){
 
 }
 
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     int i;
     float degree = 2;
@@ -167,9 +171,10 @@ void main(int argc, char *argv[])
             sscanf (argv[i+1], "%i", &intv) == 1;
             sscanf (argv[i+1], "%f", &floatv) == 1;
             switch(option[1]){
+                // Handle short (-) options
                 case 'h': {
                     dimension_y = intv;
-                    inv_res = dimension_y/y_max;
+                    ppu = dimension_y/y_max;
                     i++; break;
                 }
                 case 'w': {
@@ -196,12 +201,13 @@ void main(int argc, char *argv[])
                 case 'M': {
                     dimension_x *= intv;
                     dimension_y *= intv;
-                    inv_res = dimension_y/y_max;
+                    ppu = dimension_y/y_max;
                     i++; break;
                 }
                 case 's': {
                     print_verbose = 0; break;
                 }
+                // Handle long (--) options
                 case '-': {
                     if(!strcmp(option, "--ox")){
                         oratio[0] = floatv;
@@ -211,7 +217,11 @@ void main(int argc, char *argv[])
                     }
                     if(!strcmp(option, "--ymax")){
                         y_max = floatv;
-                        inv_res = dimension_y/y_max;
+                        ppu = dimension_y/y_max;
+                    }
+                    if(!strcmp(option, "--ppu")){
+                        ppu = floatv;
+                        y_max = dimension_y/ppu;
                     }
                     if(!strcmp(option, "--degree")){
                         degree = floatv;
@@ -229,7 +239,7 @@ void main(int argc, char *argv[])
         printf("   height  \t%d\n", dimension_y);
         printf("   width  \t%d\n", dimension_x);
         printf("   y_max  \t%.2f\n", y_max);
-        printf("   inv_res  \t%.2f\n", inv_res);
+        printf("   ppu  \t%.2f\n", ppu);
         printf("   max_iter \t%d\n\n", MAXT);
         printf("   Effective Resolution \n\t%d*%d\n", dimension_x, dimension_y);
         printf("--------------------------\n");
@@ -237,7 +247,7 @@ void main(int argc, char *argv[])
     }
 
     // Common to all Fractals
-    struct complex origin = _complex(dimension_x*oratio[0]/inv_res, dimension_y*oratio[1]/inv_res);
+    struct complex origin = _complex(dimension_x*oratio[0]/ppu, dimension_y*oratio[1]/ppu);
     FILE *f;
     f = fopen("output/default_c.txt", "w");
     fprintf(f, "%d,%d\n", dimension_x, dimension_y);
@@ -245,25 +255,25 @@ void main(int argc, char *argv[])
     // Switch control based on fractal input
     switch(fractal){
         case 0: { // Mandelbrot Set
-            complexRecursiveBounded(int_multibrot, inv_res, _complex(0, 0), origin, 2, f);
+            complexRecursiveBounded(int_multibrot, ppu, _complex(0, 0), origin, 2, f);
             break;
         }
         case 1: { // Multibrot Set
             if(floor(degree) == degree)
-                complexRecursiveBounded(int_multibrot, inv_res, _complex(0, 0), origin, degree, f);
+                complexRecursiveBounded(int_multibrot, ppu, _complex(0, 0), origin, degree, f);
             else
-                complexRecursiveBounded(double_multibrot, inv_res, _complex(0, 0), origin, degree, f);
+                complexRecursiveBounded(double_multibrot, ppu, _complex(0, 0), origin, degree, f);
             break;
         }
         case 2: { // Tricorn Set
-            complexRecursiveBounded(int_multicorn, inv_res, _complex(0, 0), origin, 3, f);
+            complexRecursiveBounded(int_multicorn, ppu, _complex(0, 0), origin, 3, f);
             break;
         }
         case 3: { // Multicorn Set
             if(floor(degree) == degree)
-                complexRecursiveBounded(int_multicorn, inv_res, _complex(0, 0), origin, degree, f);
+                complexRecursiveBounded(int_multicorn, ppu, _complex(0, 0), origin, degree, f);
             else
-                complexRecursiveBounded(double_multicorn, inv_res, _complex(0, 0), origin, degree, f);
+                complexRecursiveBounded(double_multicorn, ppu, _complex(0, 0), origin, degree, f);
             break;
         }
     }
@@ -273,4 +283,6 @@ void main(int argc, char *argv[])
         printf("\n--------------------------\n");
         system("setterm --cursor on");
     }
+
+    return 0;
 }

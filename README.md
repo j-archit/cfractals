@@ -92,9 +92,8 @@ Here's a blank template to get started: To avoid retyping too much info. Do a se
 
 ### Built With
 
-* gcc/g++ v9.3.0
+* gcc/g++ v9.3.0 (Currently written in C and is expected to port to C++)
 * [Python v3.5 or greater](https://www.python.org/)
-(All code currently written in C and is expected to port to C++)
 <!--
 * [Next.js](https://nextjs.org/)
 * [React.js](https://reactjs.org/)
@@ -124,9 +123,9 @@ To get a local copy up and running follow these simple example steps.
   -->
 * Python v3.5+
 * Python Pillow Library
-  '''sh
-    pip install pillow
-  '''
+  ```sh
+  pip install pillow
+  ```
 <!--
 ### Installation
 
@@ -152,13 +151,15 @@ To get a local copy up and running follow these simple example steps.
 ## Usage
 Once you have gcc/g++ and python installed, compile main.c by running the following command in the top directory.
 Linux:
-'''sh
-gcc -w src/main.c -o main -lm -fno-math-errno -ffinite-math-only -fno-signed-zeros -fsingle-precision-constant
-'''
+  ```sh
+  gcc -w src/main.c -o main -lm -fno-math-errno -ffinite-math-only -fno-signed-zeros -fsingle-precision-constant
+  ```
 Windows:
-'''sh
-gcc -w src/main.c -o main.exe -lm -fno-math-errno -ffinite-math-only -fno-signed-zeros -fsingle-precision-constant
-'''
+  ```sh
+  gcc -w src/main.c -o main.exe -lm -fno-math-errno -ffinite-math-only -fno-signed-zeros -fsingle-precision-constant
+  ```
+  This can also be compiled using a g++, by replacing gcc with g++ in the above commands.
+  
 Once compilation is complete, run the program from main/main.exe.
 This generates a text file in ./outputs folder. 
 Run src/gen.py

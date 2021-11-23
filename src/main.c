@@ -88,14 +88,16 @@ struct complex _divd (struct complex A, double b){
     C.im = A.im / b;
     return C;
 }
+int _eq (struct complex A, struct complex B){
+    return (A.re == B.re && A.im == B.im);
+}
 
 void progress(int p, int total){
     printf("%c %2.0f%%\b\b\b\b\b", sla[p % 5], (double)((p*100)/total));
 }
 
 int check(struct complex Z){
-    if(Z.re < bound && Z.im < bound)
-        //if(Z.re > -bound && Z.im > -bound)
+    if(Z.re < bound && Z.im < bound && Z.re > -bound && Z.im > -bound)
             return 1;
     return 0;
 }
@@ -103,9 +105,16 @@ int check(struct complex Z){
 // Loops start at the bottom left in terms of their iterating variables(i, j) and at the top right via (i, dimension_y - j). 
 // This is mostly for compatibility to write out pixel file.
 
-// Generating Function for all complex recursive function defined using bound-ablity, eg Mandelbrot, Tricorn and Multi variations of these. 
-void complexRecursiveBounded(struct complex (*func)(struct complex, struct complex, double), double ppu, struct complex S, struct complex origin, double degree, FILE* f){
-    
+// Generating Functions for all complex recursive function defined using bound-ablity, eg Mandelbrot, Tricorn and Multi variations of these. 
+int check_set(
+    struct complex Z, struct complex C, 
+    struct complex (*nextg)(struct complex, struct complex, double), 
+    double deg, int count)
+{
+    Z = nextg(Z, C, deg);       
+    return ++count > MAXT || check(Z) && check_set(Z, C, nextg, deg, count);
+}
+void complexRecursiveBounded(struct complex (*nextg)(struct complex, struct complex, double), double ppu, struct complex S, struct complex origin, double degree, FILE* f){
     struct complex Z;
     progress(0, dimension_y);
     // Loop over ACS Coordinates and convert to CCS on the fly.
@@ -121,13 +130,15 @@ void complexRecursiveBounded(struct complex (*func)(struct complex, struct compl
         for(i = 0; i < dimension_x; i++){
             // Conversion to CCS
             struct complex C = _sub(_complex(i/ppu, j/ppu), origin);
-            int k = 0;
-            Z = S;
-            while(k <= MAXT && check(Z)){
-                Z = func(Z, C, degree);
-                k++;
-            }
-            col = (uint8_t)(k > MAXT);
+            int col = check_set(S, C, nextg, degree, 0);
+            // int k = 0;
+            // Z = S;
+            // while(k <= MAXT && check(Z)){
+            //     Z = nextg(Z, C, degree);
+            //     k++;
+            // }
+            // col = (uint8_t)(k > MAXT);
+            
             if(last_color ^ col){
             // if(col){
                 fprintf(f, "%d ", i);

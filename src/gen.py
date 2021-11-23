@@ -4,14 +4,19 @@ import subprocess
 from PIL import Image, ImageDraw
 
 sdir = os.path.dirname(__file__) #<-- absolute dir the script is in
+sdir = os.path.dirname(sdir)
+sdir = os.path.abspath(sdir)
+print(sdir)
 
-fname = os.path.join(sdir, "../output/default_c.txt")
+def_fname = os.path.join("output", "default_c.txt")
+fname = os.path.join(sdir, def_fname)
+
 argv = sys.argv[1:]
 for i, arg in enumerate(argv):
     if arg == "-f":
-        fname = os.path.join(sdir, argv[i+1])
+        fname = os.path.abspath(argv[i+1])
     if arg == "-o":
-        oname = os.path.join(sdir, argv[i+1]) 
+        oname = os.path.abspath(argv[i+1]) 
 
 with open(fname) as f:
     dim = f.readline().split(",")
@@ -68,9 +73,8 @@ except:
 print("   Saving Image:", end="")
 
 if 'oname' not in locals():
-    oname = os.path.join(sdir, "../output/")
+    oname = os.path.join(sdir, "output")
 
-oname = f"{oname}({i_o}.{j_o}).png"
-new_image.save(oname)
-print(f"\r   Done Saving:  \n   {oname}");
+new_image.save(f'{oname}_{i_o}_{j_o}.png')
+print(f"\r   Done Saving:  \n   {oname}_{i_o}_{j_o}.png");
 print("--------------------------");

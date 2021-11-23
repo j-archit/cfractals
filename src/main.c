@@ -13,7 +13,8 @@ int dimension_x = 1920;
 double origin_offset[2] = {0.65, 0.5};
 float y_max = 2.222;
 float ppu = 1080/2.222;
-int MAXT = 100;
+int max_iter = 100;
+int gen_grad = 0;
 
 // These control printing to the console
 int print_verbose = 1;
@@ -76,6 +77,9 @@ struct complex _conj (struct complex A){
 double _mag(struct complex A){
     return sqrt((A.re * A.re + A.im * A.im));
 }
+double _magsq(struct complex A){
+    return A.re * A.re + A.im * A.im;
+}
 struct complex _div (struct complex A, struct complex B){
     struct complex C;
     C = _mul(A, _conj(B));
@@ -93,18 +97,13 @@ void progress(int p, int total){
     printf("%c %2.0f%%\b\b\b\b\b", sla[p % 5], (double)((p*100)/total));
 }
 
-int check(struct complex Z){
-    if(Z.re < bound && Z.im < bound)
-        //if(Z.re > -bound && Z.im > -bound)
-            return 1;
-    return 0;
-}
-
 // Loops start at the bottom left in terms of their iterating variables(i, j) and at the top right via (i, dimension_y - j). 
 // This is mostly for compatibility to write out pixel file.
-
 // Generating Function for all complex recursive function defined using bound-ablity, eg Mandelbrot, Tricorn and Multi variations of these. 
-void complexRecursiveBounded(struct complex (*func)(struct complex, struct complex, double), double ppu, struct complex S, struct complex origin, double degree, FILE* f){
+void complexRecursiveBounded(
+    struct complex (*nextz)(struct complex, struct complex, double),
+    int (*check)(struct complex),
+    double ppu, struct complex S, struct complex origin, double degree, FILE* f){
     
     struct complex Z;
     progress(0, dimension_y);
@@ -123,14 +122,23 @@ void complexRecursiveBounded(struct complex (*func)(struct complex, struct compl
             struct complex C = _sub(_complex(i/ppu, j/ppu), origin);
             int k = 0;
             Z = S;
-            while(k <= MAXT && check(Z)){
-                Z = func(Z, C, degree);
+            while(k <= max_iter && check(Z)){
+                Z = nextz(Z, C, degree);
                 k++;
             }
-            col = (uint8_t)(k > MAXT);
+            col =   (gen_grad)*(
+                    0*(k == 1) +
+                    1*(k > 1) + 
+                    1*(k >= 2) + 
+                    1*(k >= 4) + 
+                    1*(k >= 6) + 
+                    1*(k >= 16) +
+                    1*(k >= 64) + 
+                    1*(k >= 128)
+                    ) + 1*(k > max_iter);
+
             if(last_color ^ col){
-            // if(col){
-                fprintf(f, "%d ", i);
+                fprintf(f, "%d:%d ", col, i);
                 fl = 1;
             }
             last_color = col;
@@ -155,12 +163,34 @@ struct complex double_multicorn(struct complex Z, struct complex C, double d){
     return _add(_conj(_pow(Z, d)), C);
 }
 
+int check_mandelbrot(struct complex Z){
+    return _magsq(Z) < 4;
+}
+int check_general(struct complex Z){
+    return Z.re < bound && Z.im < bound && Z.re > -bound && Z.im > -bound;
+}
+
 void newton(){
 
 }
 
-int main(int argc, char *argv[])
-{
+void print_help(int code){
+    switch(code){
+        case(1):{
+            printf("--------------------------\n");
+            printf("Unknown Fractal:\n");
+            printf("Available:\n");
+            printf("   -> mandelbrot (0)\n");
+            printf("   -> multibrot (1) : Requires degree argument\n");
+            printf("   -> tricorn (2)\n");
+            printf("   -> multicorn (3) : Requires degree argument\n");
+            printf("   -> newton (4)\n");
+            break;    
+        }
+    }
+}
+
+int main(int argc, char *argv[]){
     int i;
     char fname[] = "output/default_c.txt";
     float degree = 2;
@@ -169,8 +199,10 @@ int main(int argc, char *argv[])
         if(option[0] == '-'){
             int intv;
             float floatv;
-            sscanf (argv[i+1], "%i", &intv) == 1;
-            sscanf (argv[i+1], "%f", &floatv) == 1;
+            if(i != argc - 1){
+                sscanf (argv[i+1], "%i", &intv) == 1;
+                sscanf (argv[i+1], "%f", &floatv) == 1;
+            }
             switch(option[1]){
                 // Handle short (-) options
                 case 'h': {
@@ -182,19 +214,12 @@ int main(int argc, char *argv[])
                     dimension_x = intv; i++; break;
                 }
                 case 'm': {
-                    MAXT = intv; i++; break;
+                    max_iter = intv; i++; break;
                 }
                 case 'f': {
                     fractal = intv;
                     if(fractal > 3){
-                        printf("--------------------------\n");
-                        printf("Unknown Fractal:\n");
-                        printf("Available:\n");
-                        printf("   -> mandelbrot (0)\n");
-                        printf("   -> multibrot (1) : Requires degree argument\n");
-                        printf("   -> tricorn (2)\n");
-                        printf("   -> multicorn (3) : Requires degree argument\n");
-                        printf("   -> newton (4)\n");
+                        print_help(1);
                         exit(1);
                     }
                     i++; break;
@@ -210,6 +235,9 @@ int main(int argc, char *argv[])
                 }
                 // Handle long (--) options
                 case '-': {
+                    if(!strcmp(option, "--grad")){
+                        gen_grad = 1;
+                    }
                     if(!strcmp(option, "--ox")){
                         origin_offset[0] = floatv;
                     }
@@ -244,7 +272,7 @@ int main(int argc, char *argv[])
         printf("   width  \t%d\n", dimension_x);
         printf("   y_max  \t%.2f\n", y_max);
         printf("   ppu  \t%.2f\n", ppu);
-        printf("   max_iter \t%d\n\n", MAXT);
+        printf("   max_iter \t%d\n\n", max_iter);
         printf("   Effective Resolution \n\t%d*%d\n", dimension_x, dimension_y);
         printf("--------------------------\n");
         printf("   Progress:\n   ");
@@ -259,25 +287,25 @@ int main(int argc, char *argv[])
     // Switch control based on fractal input
     switch(fractal){
         case 0: { // Mandelbrot Set
-            complexRecursiveBounded(int_multibrot, ppu, _complex(0, 0), origin, 2, f);
+            complexRecursiveBounded(int_multibrot, check_mandelbrot, ppu, _complex(0, 0), origin, 2, f);
             break;
         }
         case 1: { // Multibrot Set
             if(floor(degree) == degree)
-                complexRecursiveBounded(int_multibrot, ppu, _complex(0, 0), origin, degree, f);
+                complexRecursiveBounded(int_multibrot, check_general, ppu, _complex(0, 0), origin, degree, f);
             else
-                complexRecursiveBounded(double_multibrot, ppu, _complex(0, 0), origin, degree, f);
+                complexRecursiveBounded(double_multibrot, check_general, ppu, _complex(0, 0), origin, degree, f);
             break;
         }
         case 2: { // Tricorn Set
-            complexRecursiveBounded(int_multicorn, ppu, _complex(0, 0), origin, 3, f);
+            complexRecursiveBounded(int_multicorn, check_general, ppu, _complex(0, 0), origin, 3, f);
             break;
         }
         case 3: { // Multicorn Set
             if(floor(degree) == degree)
-                complexRecursiveBounded(int_multicorn, ppu, _complex(0, 0), origin, degree, f);
+                complexRecursiveBounded(int_multicorn, check_general, ppu, _complex(0, 0), origin, degree, f);
             else
-                complexRecursiveBounded(double_multicorn, ppu, _complex(0, 0), origin, degree, f);
+                complexRecursiveBounded(double_multicorn, check_general, ppu, _complex(0, 0), origin, degree, f);
             break;
         }
     }

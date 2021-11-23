@@ -6,7 +6,6 @@ from PIL import Image, ImageDraw
 sdir = os.path.dirname(__file__) #<-- absolute dir the script is in
 sdir = os.path.dirname(sdir)
 sdir = os.path.abspath(sdir)
-print(sdir)
 
 def_fname = os.path.join("output", "default_c.txt")
 fname = os.path.join(sdir, def_fname)
@@ -17,6 +16,9 @@ for i, arg in enumerate(argv):
         fname = os.path.abspath(argv[i+1])
     if arg == "-o":
         oname = os.path.abspath(argv[i+1]) 
+
+def color_lookup(a):
+    return round(240*(a/7)**2)
 
 with open(fname) as f:
     dim = f.readline().split(",")
@@ -37,27 +39,50 @@ with open(fname) as f:
     for line in f:
         sp = line.strip().split(" ")
         row = int(sp[0])
-
         pix = sp[1:]
-        # last_col = 0
+        
+        # Monotone
+        # i = 0
+        # while True:
+        #     try:
+        #         start = int(pix[i])
+        #     except IndexError:
+        #         break
+        #     try:
+        #         end = int(pix[i+1])
+        #     except IndexError:
+        #         end = i_o
+        #     i += 2
+
+        #     for pixeli in range(start, end):
+        #         drawer.point((pixeli, row), fill=255)
+            
+        #     if end == i_o:
+        #         break
+
+        # Color Layers
         i = 0
+        color = 0
         while True:
             try:
-                start = int(pix[i])
+                color, start = pix[i].split(":")
+                color = int(color)
+                start = int(start)
             except IndexError:
                 break
             try:
-                end = int(pix[i+1])
+                c , end = pix[i+1].split(":")
+                end = int(end)
             except IndexError:
                 end = i_o
-            i += 2
+            i += 1
 
             for pixeli in range(start, end):
-                drawer.point((pixeli, row), fill=255)
+                drawer.point((pixeli, row), fill=color_lookup(color))
             
             if end == i_o:
                 break
-
+        
         # Progress reported via each row
         if not row % 25:
             sl = (sl + 1) % 4

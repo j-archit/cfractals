@@ -70,6 +70,7 @@ print("   Saving Image:", end="")
 if 'oname' not in locals():
     oname = os.path.join(sdir, "../output/")
 
-new_image.save(f'{oname}_{i_o}*{j_o}.png')
-print(f"\r   Done Saving:  \n   {oname}_{i_o}*{j_o}.png");
+oname = f"{oname}({i_o}.{j_o}).png"
+new_image.save(oname)
+print(f"\r   Done Saving:  \n   {oname}");
 print("--------------------------");

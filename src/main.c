@@ -10,7 +10,7 @@
 // These control output image and are globally set.
 int dimension_y = 1080;
 int dimension_x = 1920;
-double oratio[2] = {0.65, 0.5};
+double origin_offset[2] = {0.65, 0.5};
 float y_max = 2.222;
 float ppu = 1080/2.222;
 int MAXT = 100;
@@ -162,6 +162,7 @@ void newton(){
 int main(int argc, char *argv[])
 {
     int i;
+    char fname[] = "output/default_c.txt";
     float degree = 2;
     for(i = 1; i < argc; i++){
         char* option = argv[i];
@@ -210,10 +211,10 @@ int main(int argc, char *argv[])
                 // Handle long (--) options
                 case '-': {
                     if(!strcmp(option, "--ox")){
-                        oratio[0] = floatv;
+                        origin_offset[0] = floatv;
                     }
                     if(!strcmp(option, "--oy")){
-                        oratio[1] = floatv;
+                        origin_offset[1] = floatv;
                     }
                     if(!strcmp(option, "--ymax")){
                         y_max = floatv;
@@ -225,6 +226,9 @@ int main(int argc, char *argv[])
                     }
                     if(!strcmp(option, "--degree")){
                         degree = floatv;
+                    }
+                    if(!strcmp(option, "--outfile")){
+                        strcpy(fname, argv[i+1]);
                     }
                 }    
             }
@@ -247,9 +251,9 @@ int main(int argc, char *argv[])
     }
 
     // Common to all Fractals
-    struct complex origin = _complex(dimension_x*oratio[0]/ppu, dimension_y*oratio[1]/ppu);
+    struct complex origin = _complex(dimension_x*origin_offset[0]/ppu, dimension_y*origin_offset[1]/ppu);
     FILE *f;
-    f = fopen("output/default_c.txt", "w");
+    f = fopen(fname, "w");
     fprintf(f, "%d,%d\n", dimension_x, dimension_y);
     
     // Switch control based on fractal input

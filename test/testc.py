@@ -14,14 +14,13 @@ def do(new_exec, base_exec, maxiter, mag, grad, t_iters, log):
     f.write("\n----------------------\n")
 
     # Run Tests
-    print("Running Tests")
     avgs = []
     rune = [('Base', test_command_base), ('New', test_command_new)]
     rune.reverse()
     for na, comm in rune:
         avg = 0
         for i in range(t_iters):
-            print(f"\r{na} Test {i+1}", end=' ')    
+            print(f"\r{na}, Iter #{i+1}", end='')    
             val = subprocess.run(comm.split(" "), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
             val = float(re.findall("Time=([0-9.]*)", val.stderr)[0])
             avg += val
@@ -32,7 +31,8 @@ def do(new_exec, base_exec, maxiter, mag, grad, t_iters, log):
         a = avg/t_iters
         print(f" .. Done\nA: {a:>.03f}s\n")
         avgs.append(f"{na} Avg:\t {a:>0.3f}s\n")
-        
+    
+    f.write("\n----------------------\n")
     f.writelines(avgs)
     f.close()
 
@@ -59,8 +59,9 @@ if __name__ == "__main__":
     maxiter = 200
     mag = 1
     grad = True
-    t_iters = 50
+    t_iters = 20
     log_file = os.path.join(sdir, "test", "test_result.log")
 
-    for mags in range(1, 10):
+    for mags in range(1, 20):
+        print(f"---- Test {mags} ----")
         do(new_exec=new_e, base_exec=base_e, maxiter=maxiter, mag=mags, grad=grad, t_iters=t_iters, log=log_file)

@@ -1,6 +1,8 @@
 output/
-src/*.cpp
-main
 *.out
 *.log
-
+main
+mainb
+mainb.c
+*.build/
+src/gen.bin

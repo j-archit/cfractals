@@ -41,25 +41,6 @@ with open(fname) as f:
         row = int(sp[0])
         pix = sp[1:]
         
-        # Monotone
-        # i = 0
-        # while True:
-        #     try:
-        #         start = int(pix[i])
-        #     except IndexError:
-        #         break
-        #     try:
-        #         end = int(pix[i+1])
-        #     except IndexError:
-        #         end = i_o
-        #     i += 2
-
-        #     for pixeli in range(start, end):
-        #         drawer.point((pixeli, row), fill=255)
-            
-        #     if end == i_o:
-        #         break
-
         # Color Layers
         i = 0
         color = 0
